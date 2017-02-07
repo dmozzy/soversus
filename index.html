@@ -42,7 +42,9 @@
           labels: []
         }
 
-
+        var pieOptions = {
+          animation : false,  // Edit: correction typo: from 'animated' to 'animation'
+        }
 
         $scope.centerJSON = function() {
           leafletData.getMap().then(function(map) {
@@ -209,7 +211,7 @@
           }
           document.getElementById("chartTitle").innerHTML = feature.properties.name;
           var ctx = document.getElementById("myChart").getContext("2d");
-          var myNewChart = new Chart(ctx).Pie(feature.properties.chartData);
+          var myNewChart = new Chart(ctx).Pie(feature.properties.chartData, pieOptions);
           $scope.currentChart = myNewChart;
         };
 
@@ -318,15 +320,15 @@
       <a rel="license" href="http://creativecommons.org/licenses/by/3.0/au/"><img align="right" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/3.0/au/88x31.png" /></a><a href="https://github.com/dmozzy/soversus">Github.</a> Data is parsed from the <a href="https://archive.org/details/stackexchange">15th December 2016 Stack Exchange dump</a> and is a combination of Post and Answer scores. Creative Commons Attribution: <a href="http://stackexchange.com">Stack Exchange</a>, <a href="http://stackoverflow.com">Stack Overflow</a>, <a href="http://www.geonames.org/">Geonames</a> and <a href="http://www.naturalearthdata.com">Natural Earth</a>.
     </div>
 
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-  ga('create', 'UA-91555615-1', 'auto');
-  ga('send', 'pageview');
+      ga('create', 'UA-91555615-1', 'auto');
+      ga('send', 'pageview');
 
-</script>
+    </script>
   </body>
 </html>
