@@ -1,6 +1,7 @@
-SoVersus
+
+Versus
 --------
-SoVersus is a geographical representation of the popularity of programming languages in defined geographical countries or states.
+SoVersus is a geographical representation of the popularity of programming languages in defined geographical countries or states. The score is taken from questions and answers posted on the populate [Stack Overlow](http://stackoverflow.com/) question and answer site.
 
 The score is calculated by summing up all the Post and Answer scores per user and then allocating the User to a country and/or state. As this is not always obvious, there is significant room for error where a user may be incorrectly assigned to a user or state. 
 
