@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en" ng-app="soversus">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compare programming language scores from Stackoverflow">
+    <title>SoVersus - Compare programming language scores from Stackoverflow</title>
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    <link rel="stylesheet" href="css/layouts/soversus.css">
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.1/leaflet.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
+    <script src="js/angular-leaflet-directive.min.js"></script>
+    <script src="js/isteven-multi-select.js"></script>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.1/leaflet.css">
+    <link rel="stylesheet" href="js/isteven-multi-select.css">
+    <script>
+      var app = angular.module("soversus", ["leaflet-directive", "isteven-multi-select"] );
+      //var colourArray = ['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a'];
+      var colourArray = ['#1f78b4', '#e31a1c', '#33a02c','#ff7f00','#6a3d9a', '#a6cee3','#fb9a99','#b2df8a','#fdbf6f','#cab2d6','#bdbdbd','#969696','#737373','#525252','#252525','#000000'];
+      app.controller("GeoJSONController", [ '$scope', '$http', 'leafletData', function($scope, $http, leafletData) {
+        angular.extend($scope, {
+          defaults: {
+            scrollWheelZoom: true,
+            zoomControlPosition: 'topright'
+          }
+        });
+
+        angular.extend($scope, {
+          center: {
+            lat: 44.58,
+            lng: -103.46,
+            zoom: 3,
+            autoDiscover: false
+          }
+        });
+
+        $scope.legend = {
+          position: 'bottomright',
+          colors: [],
+          labels: []
+        }
+
+
+
+        $scope.centerJSON = function() {
+          leafletData.getMap().then(function(map) {
+            var latlngs = [];
+            for (var i in $scope.geojson.data.features[0].geometry.coordinates) {
+              var coord = $scope.geojson.data.features[0].geometry.coordinates[i];
+              for (var j in coord) {
+                var points = coord[j];
+                for (var k in points) {
+                  latlngs.push(L.GeoJSON.coordsToLatLng(points[k]));
+                }
+              }
+            }
+            map.fitBounds(latlngs);
+          });
+        };
+
+        $scope.onLanguageChosen = function(data) {
+          //console.log(data);
+          //console.log($scope.geojson)
+
+          var tickedValues = $scope.programmingLanguages.filter(function(value) {
+            return value.ticked
+          })
+
+          var languageNameToColour = [];
+          var legendLabels = []
+          var legendColours = []
+
+          for(i=0;i<tickedValues.length;i++) {
+            languageNameToColour[tickedValues[i].name] = colourArray[i];
+            legendLabels.push(tickedValues[i].name);
+            legendColours.push(colourArray[i]);
+          }
+
+
+
+          $scope.geojson.data.features.forEach(function(feature){
+            var selectedLanguageArray = []
+            var maxVal = 0;
+            var maxKey = null;
+            var chartData = [];
+
+            //First loop to get the values and the maximum
+            for(var language in feature.properties.score) {
+              if(languageNameToColour[language] != null) {
+                var languageScore = feature.properties.score[language];
+                if(languageScore>maxVal) {
+                  maxVal = languageScore;
+                  maxKey = language;
+                }
+                chartData.push({value: languageScore, color:languageNameToColour[language], highlight:languageNameToColour[language], label:language })
+
+                selectedLanguageArray.push(language);
+              }
+            }
+            var featureName = feature.properties.NAME_0;
+            if( typeof(feature.properties.NAME_1) != 'undefined') {
+              featureName = feature.properties.NAME_1;
+            }
+            feature.properties.featureName = featureName;
+            feature.properties.chartData = chartData;
+            feature.properties.colour = languageNameToColour[maxKey]
+            feature.properties.maximumLanguage = maxKey;
+
+          })
+
+          $scope.geojson.style = function(feature) {
+            return {
+              fillColor: feature.properties.colour,
+              weight: 2,
+              opacity: 1,
+              color: 'white',
+              dashArray: '3',
+              fillOpacity: 0.7
+            };
+          }
+
+          //console.log("colours = " + legendColours)
+          //console.log("labels = " + legendLabels)
+          $scope.legend = {
+            position: 'bottomright',
+            colors: legendColours,
+            labels: legendLabels
+          }
+
+        }
+
+        $scope.programmingLanguages = [
+          { name: "javascript", ticked: true  },
+          { name: "java", ticked: true },
+          { name: "c#", ticked: true  },
+          { name: "php", ticked: true },
+          { name: "python",ticked: true  },
+          { name: "html", ticked: true  },
+          { name: "c++", ticked: true },
+          { name: "css",ticked: true  },
+          { name: "sql", ticked: true  },
+          { name: "objective-c", ticked: true },
+          { name: "c", ticked: true  },
+          { name: "ruby", ticked: true  }
+        ];
+
+
+        $scope.controls = {
+          custom: []
+        };
+
+        function highlightFeature(e) {
+          if (typeof($scope.previousTarget) != 'undefined') {
+
+            $scope.previousTarget.setStyle({
+              weight: 2,
+              opacity: 1,
+              color: 'white',
+              dashArray: '3',
+              fillOpacity: 0.7
+            });
+          }
+          var layer = e.target;
+
+          layer.setStyle({
+            weight: 5,
+            color: '#FFF',
+            dashArray: '',
+            fillOpacity: 0.7
+          });
+
+          if (!L.Browser.ie && !L.Browser.opera) {
+            layer.bringToFront();
+          }
+          $scope.previousTarget = e.target;
+        }
+
+        function zoomToFeature(e) {
+          map.fitBounds(e.target.getBounds());
+        }
+
+
+
+        $scope.$on('leafletDirectiveGeoJson.click', function(event, leafletPayload){
+          highlightFeature(leafletPayload.leafletEvent);
+          $scope.myControl.changeText(leafletPayload.leafletObject.feature);
+        });
+
+
+        $scope.myControl = L.control();
+
+        $scope.myControl.onAdd = function (map) {
+          this._div = L.DomUtil.create('div', 'chartBox');
+          this._div.id = 'chartBox';
+          this._div.innerHTML = '<span id="chartTitle">state</span><canvas id="myChart" width="195" height="195"></canvas>';
+
+          return this._div;
+        };
+
+        // method that we will use to update the control based on feature properties passed
+        $scope.myControl.changeText = function (feature) {
+          document.getElementById('chartBox').style.display='inline';
+
+          if(typeof($scope.currentChart) != 'undefined') {
+            $scope.currentChart.destroy();
+          }
+          document.getElementById("chartTitle").innerHTML = feature.properties.name;
+          var ctx = document.getElementById("myChart").getContext("2d");
+          var myNewChart = new Chart(ctx).Pie(feature.properties.chartData);
+          $scope.currentChart = myNewChart;
+        };
+
+        $scope.myControl.setPosition('bottomright');
+
+        $scope.controls.custom.push($scope.myControl);
+
+
+        $scope.getWorld = function() {
+          $http.get("data/World_Countries.enhanced.json", {cache: true}).success(function(data, status) {
+            angular.extend($scope, {
+              geojson: {
+                data: data,
+                style: {
+                  fillColor: "green",
+                  weight: 2,
+                  opacity: 1,
+                  color: 'white',
+                  dashArray: '3',
+                  fillOpacity: 0.7
+                },
+                noWrap: false
+              }
+            });
+            $scope.onLanguageChosen();
+          });
+
+          angular.extend($scope, {
+            center: {
+              lat: 0,
+              lng: 0,
+              zoom: 2,
+              autoDiscover: false
+            }
+          });
+
+        }
+
+        $scope.getUSA = function () {
+          $http.get("data/USA_States.enhanced.json", {cache: true}).success(function(data, status) {
+            angular.extend($scope, {
+              geojson: {
+                data: data,
+                style: {
+                  fillColor: "green",
+                  weight: 2,
+                  opacity: 1,
+                  color: 'white',
+                  dashArray: '3',
+                  fillOpacity: 0.7
+                },
+                noWrap: false
+              }
+            });
+
+            angular.extend($scope, {
+              center: {
+                lat: 44.58,
+                lng: -103.46,
+                zoom: 3,
+                autoDiscover: false
+              }
+            });
+
+            $scope.onLanguageChosen();
+          });
+        }
+
+        $scope.getUSA();
+
+      }]);
+
+    </script>
+  </head>
+  <body ng-controller="GeoJSONController">
+
+    <div class="header">
+      <div class="home-menu">
+        <a href="/">SoVersus - Stack Overflow programming language score.</a>
+        <span>&nbsp;</span>
+        <div class="home-inline">
+          <div
+               isteven-multi-select
+               input-model="programmingLanguages"
+               max-labels="2"
+               output-model="outputBrowsers"
+               button-label="icon name"
+               item-label="icon name"
+               tick-property="ticked"
+               on-item-click="onLanguageChosen(data)"
+               helper-elements="" >
+          </div>
+        </div>
+        <span>&nbsp;</span>
+        <a href="#" ng-click="getUSA()">USA</a>
+        <span>&nbsp;</span>
+        <a href="#" ng-click="getWorld()">World</a>
+
+      </div>
+    </div>
+
+    <div class="splash">
+      <leaflet geojson="geojson" lf-center="center" defaults="defaults" legend="legend" controls="controls" width="100%" height="100%"></leaflet>
+    </div>
+    <div class="footer l-box is-center">
+      <a rel="license" href="http://creativecommons.org/licenses/by/3.0/au/"><img align="right" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/3.0/au/88x31.png" /></a><a href="https://github.com/dmozzy/soversus">Github.</a> Data is parsed from the <a href="https://archive.org/details/stackexchange">15th December 2016 Stack Exchange dump</a> and is a combination of Post and Answer scores. Creative Commons Attribution: <a href="http://stackexchange.com">Stack Exchange</a>, <a href="http://stackoverflow.com">Stack Overflow</a>, <a href="http://www.geonames.org/">Geonames</a> and <a href="http://www.naturalearthdata.com">Natural Earth</a>.
+    </div>
+
+
+  </body>
+</html>
